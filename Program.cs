@@ -22,6 +22,14 @@ namespace twentyQclient
             }
 
             Console.ReadKey(true);
+            Console.WriteLine("DEBUG: Terminating connections");
+
+            for(int i = 0; i < clients.Length; i++)
+            {
+                clients[i].Quit();
+            }
+
+            Console.ReadKey(true);
         }
     }
 }

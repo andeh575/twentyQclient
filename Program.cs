@@ -11,25 +11,15 @@ namespace twentyQclient
         static void Main(string[] args)
         {
 
-            Client[] clients = new Client[5];
+            Client[] clients = new Client[1];
             for(int i = 0; i < clients.Length; i++)
             {
                 clients[i] = new Client();
                 clients[i].port = 14000;
                 clients[i].IP = "127.0.0.1";
                 clients[i].connect();
-                Console.WriteLine("Client {0} connected to server on port: {0}", i, clients[i].port);
             }
 
-            Console.ReadKey(true);
-            Console.WriteLine("DEBUG: Terminating connections");
-
-            for(int i = 0; i < clients.Length; i++)
-            {
-                clients[i].Quit();
-            }
-
-            Console.ReadKey(true);
         }
     }
 }

@@ -22,11 +22,62 @@ namespace twentyQclient
             try
             {
                 client.Connect(IP, port);
+                Console.WriteLine("Connected to Game server ({0}:{0})", IP, port);
+                playTQ();
             }
             catch(Exception ex)
             {
                 Console.WriteLine("Error connecting to game server:");
                 Console.WriteLine(ex.Message);
+            }
+        }
+
+        public void playTQ()
+        {
+            Console.WriteLine("Welcome to Twenty Questions 1.0");
+            Console.WriteLine("Type 'h' for a list of commands");
+
+            while(true)
+            {
+                Console.WriteLine("Enter a command...");
+                string command = Console.ReadLine();
+
+                switch(command)
+                {
+                    case "q":
+                    case "Q":
+                        Console.WriteLine("Received command: {0}", command);
+                        Quit();
+                        return;
+                    case "a":
+                    case "A":
+                        Console.WriteLine("Received command: {0}", command);
+                        Answer();
+                        break;
+                    case "?":
+                        Console.WriteLine("Received command: {0}", command);
+                        Question();
+                        break;
+                    case "e":
+                    case "E":
+                        Console.WriteLine("Received command: {0}", command);
+                        End();
+                        break;
+                    case "s":
+                    case "S":
+                        Console.WriteLine("Received command: {0}", command);
+                        Start();
+                        break;
+                    case "h":
+                    case "H":
+                        Help();
+                        break;
+                    default:
+                        Console.WriteLine("Invalid command: {0}", command);
+                        Invalid();
+                        break;
+                }
+            
             }
         }
 
@@ -36,6 +87,7 @@ namespace twentyQclient
          */ 
         public void Quit()
         {
+            Console.WriteLine("Ending connection with server");
             client.GetStream().Close();
             client.Close();
         }
@@ -47,7 +99,7 @@ namespace twentyQclient
          */ 
         public void Question()
         {
-
+            Console.WriteLine("QUESTION");
         }
 
         /**
@@ -57,7 +109,7 @@ namespace twentyQclient
          */ 
         public void Answer()
         {
-
+            Console.WriteLine("ANSWER");
         }
 
         /**
@@ -66,7 +118,7 @@ namespace twentyQclient
          */ 
         public void End()
         {
-
+            Console.WriteLine("END");
         }
 
         /**
@@ -75,7 +127,31 @@ namespace twentyQclient
          */
         public void Start()
         {
+            Console.WriteLine("START");
+        }
 
+        /**
+         * Client has entered an invalid command - remind them of the valid
+         * inputs.
+         */
+        public void Invalid()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Invalid command received!");
+            Console.WriteLine("Type 'h' for a list of commands");
+            Console.WriteLine();
+        }
+
+        public void Help()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Valid Commands:");
+            Console.WriteLine("S : Start a new game");
+            Console.WriteLine("? : Ask a new question");
+            Console.WriteLine("A : Answer a question");
+            Console.WriteLine("E : End the current game");
+            Console.WriteLine("Q : Quit the program");
+            Console.WriteLine();
         }
     }
 }

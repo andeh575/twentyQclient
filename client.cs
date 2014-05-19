@@ -13,7 +13,11 @@ namespace twentyQclient
     {
         public int port;
         public string IP;
+
+        private int lives;  // Guesses/Questions left in current game
+        private bool game;  // Game in progress flag
         private TcpClient client;
+        private string ver = "Twenty Questions 1.0";
 
         public void connect()
         {
@@ -22,7 +26,7 @@ namespace twentyQclient
             try
             {
                 client.Connect(IP, port);
-                Console.WriteLine("Connected to Game server ({0}:{0})", IP, port);
+                Console.WriteLine("Connected to Game server ({0}:{1})", IP, port);
                 playTQ();
             }
             catch(Exception ex)
@@ -34,7 +38,7 @@ namespace twentyQclient
 
         public void playTQ()
         {
-            Console.WriteLine("Welcome to Twenty Questions 1.0");
+            Console.WriteLine("Welcome to {0}", ver);
             Console.WriteLine("Type 'h' for a list of commands");
 
             while(true)
@@ -46,26 +50,21 @@ namespace twentyQclient
                 {
                     case "q":
                     case "Q":
-                        Console.WriteLine("Received command: {0}", command);
                         Quit();
                         return;
                     case "a":
                     case "A":
-                        Console.WriteLine("Received command: {0}", command);
                         Answer();
                         break;
                     case "?":
-                        Console.WriteLine("Received command: {0}", command);
                         Question();
                         break;
                     case "e":
                     case "E":
-                        Console.WriteLine("Received command: {0}", command);
-                        End();
+                        End(false);
                         break;
                     case "s":
                     case "S":
-                        Console.WriteLine("Received command: {0}", command);
                         Start();
                         break;
                     case "h":
@@ -73,7 +72,6 @@ namespace twentyQclient
                         Help();
                         break;
                     default:
-                        Console.WriteLine("Invalid command: {0}", command);
                         Invalid();
                         break;
                 }
@@ -87,7 +85,10 @@ namespace twentyQclient
          */ 
         public void Quit()
         {
-            Console.WriteLine("Ending connection with server");
+            Console.WriteLine();
+            Console.WriteLine("Quitting {0}", ver);
+            Console.WriteLine("Ending connection with server...");
+            
             client.GetStream().Close();
             client.Close();
         }
@@ -99,7 +100,27 @@ namespace twentyQclient
          */ 
         public void Question()
         {
-            Console.WriteLine("QUESTION");
+            string data;
+            byte[] package;
+
+            // Need space for carriage return and new line char
+            Console.WriteLine("Type out your question: (252 max char)");
+            Console.WriteLine();
+
+            data = Console.ReadLine();
+
+            if(data.Length > 254)
+            {
+                Console.WriteLine("Input is too long");
+                return;
+            }
+            else
+            {
+                Console.WriteLine("Transmitting question...");
+                package = packageData("Q:", data);
+                transmitData(package);
+            }
+
         }
 
         /**
@@ -109,49 +130,142 @@ namespace twentyQclient
          */ 
         public void Answer()
         {
-            Console.WriteLine("ANSWER");
+            string answer;
+            byte[] package;
+            bool flag = true;
+
+            Console.WriteLine("Did the other player guess the answer? (y/n)");
+            Console.WriteLine();
+
+            // Waiting for the client to tell us if the answer was correct
+            while (flag)
+            {
+                answer = Console.ReadLine();
+
+                switch(answer)
+                {
+                    case "y":
+                    case "Y":
+                        Console.WriteLine("Sending Answer...");
+                        package = packageData("A:", answer);
+                        transmitData(package);
+                        End(true);
+                        flag = false;
+                        break;
+                    case "n":
+                    case "N":
+                        Console.WriteLine("Sending Answer...");
+                        package = packageData("A:", answer);
+                        transmitData(package);
+                        flag = false;
+                        break;
+                    default:
+                        Console.WriteLine("Please type 'y' or 'n'");
+                        Console.WriteLine();
+                        break;
+                }
+            }
         }
 
         /**
          * Notice from host client that the game has either been won or lost.
          * Should only be accessible by the host client.
          */ 
-        public void End()
+        private void End(Boolean win)
         {
-            Console.WriteLine("END");
+            byte[] package;
+
+            // Did the game end in a win or loss for the players?
+            if(win)
+            {
+                Console.WriteLine("They guess the answer!");
+                package = packageData("E:", "Game Over - You Win!");
+                transmitData(package);
+            }
+            else
+            {
+                Console.WriteLine("They didn't guess the answer!");
+                package = packageData("E:", "Game Over - You lose!");
+                transmitData(package);
+            }
+
+            Console.WriteLine("Game Over - Let's play again!\n");
         }
 
         /**
          * Notice from host client that a game has been started.
          * Accessible by any client - designates them as host of the game.
          */
-        public void Start()
+        private void Start()
         {
-            Console.WriteLine("START");
+            byte[] package;
+
+            Console.WriteLine("Initiating a new game\n");
+
+            lives = 20;
+            game = true;
+
+            package = packageData("S:", "A new game has been started");
+            transmitData(package);
+
+            Console.WriteLine("Game started! Lives: {0}", lives);
         }
 
         /**
          * Client has entered an invalid command - remind them of the valid
          * inputs.
          */
-        public void Invalid()
+        private void Invalid()
         {
-            Console.WriteLine();
-            Console.WriteLine("Invalid command received!");
-            Console.WriteLine("Type 'h' for a list of commands");
-            Console.WriteLine();
+            Console.WriteLine("\nInvalid command received!");
+            Console.WriteLine("Type 'h' for a list of commands\n");
         }
 
-        public void Help()
+        /**
+         * Client has asked for the command list
+         */
+        private void Help()
         {
-            Console.WriteLine();
-            Console.WriteLine("Valid Commands:");
+            Console.WriteLine("\nValid Commands:");
             Console.WriteLine("S : Start a new game");
             Console.WriteLine("? : Ask a new question");
             Console.WriteLine("A : Answer a question");
             Console.WriteLine("E : End the current game");
-            Console.WriteLine("Q : Quit the program");
-            Console.WriteLine();
+            Console.WriteLine("Q : Quit the program\n");
         }
+
+        /**
+         * Function to help the client package commands and data into
+         * the proper format that the server is expecting
+         */
+        private byte[] packageData(string command, string data)
+        {
+            byte[] package = new byte[256];
+            string raw = command + data;
+
+            package = Encoding.ASCII.GetBytes(raw);
+
+            return package;
+        }
+
+        /**
+         * Function to help unpackage the information received from the
+         * server.
+         */
+        private string unpackageData(byte[] raw)
+        {
+            string unpackaged = " ";
+
+            return unpackaged;
+        }
+
+        /**
+         * Function that actually transmits messages to the server
+         */
+        private void transmitData(byte[] data)
+        {
+
+        }
+
     }
 }

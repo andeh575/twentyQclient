@@ -259,7 +259,6 @@ namespace twentyQclient
 
             // Ensure the packet is the expected size
             raw = raw.PadRight(256);
-            Console.WriteLine("'{0}'", raw);
 
             package = Encoding.ASCII.GetBytes(raw);
 
@@ -267,22 +266,10 @@ namespace twentyQclient
         }
 
         /**
-         * Function to help unpackage the information received from the
-         * server.
-         */
-        private string unpackageData(byte[] raw)
-        {
-            string unpackaged = " ";
-
-            return unpackaged;
-        }
-
-        /**
          * Function that actually transmits messages to the server
          */
         private void transmitData(byte[] data)
         {
-            Console.WriteLine("Packet size: {0}", data.Length);
             try
             {
                 client.GetStream().Write(data, 0, 256);
@@ -291,7 +278,6 @@ namespace twentyQclient
             }
             catch(Exception ex)
             {
-                Console.WriteLine("Exception???");
                 Console.WriteLine(ex.Message);
             }
             

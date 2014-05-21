@@ -58,14 +58,17 @@ namespace twentyQclient
                         break;
                     case "?":
                         Question();
+                        receiveMessage();
                         break;
                     case "e":
                     case "E":
                         End(false);
+                        receiveMessage();
                         break;
                     case "s":
                     case "S":
                         Start();
+                        receiveMessage();
                         break;
                     case "h":
                     case "H":
@@ -75,7 +78,6 @@ namespace twentyQclient
                         Invalid();
                         break;
                 }
-            
             }
         }
 
@@ -281,6 +283,29 @@ namespace twentyQclient
                 Console.WriteLine(ex.Message);
             }
             
+        }
+
+        /**
+         * Only call this when the client should expect a response from
+         * the server.
+         */
+        private void receiveMessage()
+        {
+            byte[] messageRaw = new byte[256];
+
+            try
+            {
+                client.GetStream().Read(messageRaw, 0, messageRaw.Length);
+                string message = Encoding.ASCII.GetString(messageRaw);
+
+                Console.WriteLine("SERVER: {0}", message);
+
+                client.GetStream().Flush();
+            }
+            catch (Exception Exception)
+            {
+                Console.WriteLine(Exception.Message);
+            }
         }
     }
 }

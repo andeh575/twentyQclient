@@ -85,12 +85,25 @@ namespace twentyQclient
          */ 
         public void Quit()
         {
+            byte[] package;
+
             Console.WriteLine();
             Console.WriteLine("Quitting {0}", ver);
             Console.WriteLine("Ending connection with server...");
-            
-            client.GetStream().Close();
-            client.Close();
+
+            try
+            {
+                package = packageData("Q:", " ");
+                transmitData(package);
+
+                client.GetStream().Close();
+                client.Close();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.Read();
+            }
         }
 
         /**
@@ -117,7 +130,7 @@ namespace twentyQclient
             else
             {
                 Console.WriteLine("Transmitting question...");
-                package = packageData("Q:", data);
+                package = packageData("?:", data);
                 transmitData(package);
             }
 
@@ -143,7 +156,7 @@ namespace twentyQclient
                 answer = Console.ReadLine();
 
                 switch(answer)
-                {
+                { 
                     case "y":
                     case "Y":
                         Console.WriteLine("Sending Answer...");
@@ -191,6 +204,7 @@ namespace twentyQclient
 
             Console.WriteLine("Game Over - Let's play again!\n");
         }
+
 
         /**
          * Notice from host client that a game has been started.
@@ -243,6 +257,10 @@ namespace twentyQclient
             byte[] package = new byte[256];
             string raw = command + data;
 
+            // Ensure the packet is the expected size
+            raw = raw.PadRight(256);
+            Console.WriteLine("'{0}'", raw);
+
             package = Encoding.ASCII.GetBytes(raw);
 
             return package;
@@ -264,8 +282,19 @@ namespace twentyQclient
          */
         private void transmitData(byte[] data)
         {
-
+            Console.WriteLine("Packet size: {0}", data.Length);
+            try
+            {
+                client.GetStream().Write(data, 0, 256);
+                client.GetStream().Flush();
+                Console.WriteLine("Package sent to server");
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine("Exception???");
+                Console.WriteLine(ex.Message);
+            }
+            
         }
-
     }
 }

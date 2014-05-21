@@ -19,7 +19,6 @@ namespace twentyQclient
                 clients[i].IP = "127.0.0.1";
                 clients[i].connect();
             }
-
         }
     }
 }

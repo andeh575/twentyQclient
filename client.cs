@@ -17,6 +17,7 @@ namespace twentyQclient
         private int lives;  // Guesses/Questions left in current game
         private bool game;  // Game in progress flag
         private TcpClient client;
+        private Thread incoming;
         private string ver = "Twenty Questions 1.0";
 
         public void connect()
@@ -27,6 +28,12 @@ namespace twentyQclient
             {
                 client.Connect(IP, port);
                 Console.WriteLine("Connected to Game server ({0}:{1})", IP, port);
+                
+                // Start a thread in the background that listens for server messages
+                incoming = new Thread(new ThreadStart(receiveMessage));
+                incoming.IsBackground = true;
+                incoming.Start();
+
                 playTQ();
             }
             catch(Exception ex)
@@ -58,17 +65,14 @@ namespace twentyQclient
                         break;
                     case "?":
                         Question();
-                        receiveMessage();
                         break;
                     case "e":
                     case "E":
                         End(false);
-                        receiveMessage();
                         break;
                     case "s":
                     case "S":
                         Start();
-                        receiveMessage();
                         break;
                     case "h":
                     case "H":
@@ -98,8 +102,10 @@ namespace twentyQclient
                 package = packageData("Q:", " ");
                 transmitData(package);
 
+                // Stop all threads and end connections
                 client.GetStream().Close();
                 client.Close();
+                incoming.Abort();
             }
             catch(Exception ex)
             {
@@ -170,7 +176,7 @@ namespace twentyQclient
                     case "n":
                     case "N":
                         Console.WriteLine("Sending Answer...");
-                        package = packageData("A:", answer);
+                        package = packageData("A:", "Incorrect");
                         transmitData(package);
                         flag = false;
                         break;
@@ -205,6 +211,7 @@ namespace twentyQclient
             }
 
             Console.WriteLine("Game Over - Let's play again!\n");
+            game = false;
         }
 
 
@@ -214,17 +221,24 @@ namespace twentyQclient
          */
         private void Start()
         {
-            byte[] package;
+            if (!game)
+            {
+                byte[] package;
 
-            Console.WriteLine("Initiating a new game\n");
+                Console.WriteLine("Initiating a new game\n");
 
-            lives = 20;
-            game = true;
+                lives = 20;
+                game = true;
 
-            package = packageData("S:", "A new game has been started");
-            transmitData(package);
+                package = packageData("S:", "A new game has been started");
+                transmitData(package);
 
-            Console.WriteLine("Game started! Lives: {0}", lives);
+                Console.WriteLine("Game started! Lives: {0}", lives);
+            }
+            else
+            {
+                Console.WriteLine("Game already in progress!");
+            }
         }
 
         /**
@@ -291,21 +305,48 @@ namespace twentyQclient
          */
         private void receiveMessage()
         {
-            byte[] messageRaw = new byte[256];
+            byte[] messageRaw = new byte[254];
+            string testCase1 = "A new game has been started";
+            string testCase2 = "Incorrect";
+            string testCase3 = "Game Over - You lose!";
+            string testCase4 = "Game Over - You win!";
 
-            try
+            testCase1 = testCase1.PadRight(254);
+            testCase2 = testCase2.PadRight(254);
+            testCase3 = testCase3.PadRight(254);
+            testCase4 = testCase4.PadRight(254);
+
+            while (true)
             {
-                client.GetStream().Read(messageRaw, 0, messageRaw.Length);
-                string message = Encoding.ASCII.GetString(messageRaw);
+                try
+                {
+                    client.GetStream().Read(messageRaw, 0, messageRaw.Length);
+                    string message = Encoding.ASCII.GetString(messageRaw);
 
-                Console.WriteLine("SERVER: {0}", message);
+                    Console.WriteLine("SERVER: {0}", message);
 
-                client.GetStream().Flush();
-            }
-            catch (Exception Exception)
-            {
-                Console.WriteLine(Exception.Message);
+                    // Is a game in progress?
+                    if (String.Equals(message, testCase1))
+                    {
+                        game = true;
+                    }
+                    else if (String.Equals(message, testCase2))
+                    {
+                        --lives;
+                    }
+                    else if (String.Equals(message, testCase3) || String.Equals(message, testCase4))
+                    {
+                        game = false;
+                    }
+
+                    client.GetStream().Flush();
+                }
+                catch (Exception Exception)
+                {
+                    Console.WriteLine(Exception.Message);
+                }
             }
         }
+
     }
 }

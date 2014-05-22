@@ -10,15 +10,15 @@ namespace twentyQclient
     {
         static void Main(string[] args)
         {
+            string IP;
+            Client client = new Client();
 
-            Client[] clients = new Client[1];
-            for(int i = 0; i < clients.Length; i++)
-            {
-                clients[i] = new Client();
-                clients[i].port = 14000;
-                clients[i].IP = "127.0.0.1";
-                clients[i].connect();
-            }
+            Console.WriteLine("Please enter server IP: ");
+            IP = Console.ReadLine();
+
+            client.IP = IP;
+            client.port = 14000;
+            client.connect();
         }
     }
 }

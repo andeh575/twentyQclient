@@ -333,6 +333,11 @@ namespace twentyQclient
                     else if (String.Equals(message, testCase2))
                     {
                         --lives;
+                        Console.WriteLine("Lives remaining: {0}", lives);
+
+                        // This should be handled elsewhere... ?
+                        if (lives == 0)
+                            End(false);
                     }
                     else if (String.Equals(message, testCase3) || String.Equals(message, testCase4))
                     {
